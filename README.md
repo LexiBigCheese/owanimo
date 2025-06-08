@@ -6,3 +6,7 @@ Do you often find yourself surrounded by colorful beings that are just BEGGING t
 
 Move them into a group of four or more and cast Owanimo, send them to the otherworld, and reap the mana rewards!
 Need even more mana? Cast Owanimo consecutively, and the rift in spacetime will widen, causing more mana to be rewarded!
+
+# Usage
+
+Look in https://github.com/LexiBigCheese/owanimo/blob/main/tests/normal.rs for examples.
