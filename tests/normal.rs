@@ -1,9 +1,11 @@
+use std::str::FromStr;
+
 use owanimo::{
     Board,
     standard::{ColorBoard, NuisanceBoard},
 };
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Default)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Default, Debug)]
 enum Tile {
     #[default]
     Air,
@@ -15,6 +17,7 @@ enum Tile {
     Purple,
 }
 
+#[derive(Default, Clone, Copy)]
 struct TileBoard {
     items: [[Tile; 6]; 12],
 }
@@ -34,6 +37,62 @@ impl TileBoard {
             .get_mut(y)
             .and_then(|row| row.get_mut(x))
             .unwrap_or(&mut noop) = to;
+    }
+}
+
+#[derive(Debug, Clone)]
+enum ParseError {
+    UnknownSymbol { at: (usize, usize), symbol: char },
+}
+
+impl std::fmt::Display for ParseError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ParseError::UnknownSymbol { at, symbol } => {
+                write!(f, "Unknown Symbol {} at {},{}", symbol, at.0, at.1)?
+            }
+        }
+        Ok(())
+    }
+}
+
+impl std::error::Error for ParseError {}
+
+impl FromStr for TileBoard {
+    type Err = ParseError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        use ParseError::*;
+        let mut this = Self::default();
+        let lines = s
+            .lines()
+            .filter(|x| !x.trim().is_empty())
+            .take(12)
+            .collect::<Vec<_>>();
+        let start_line = lines.len() - 1;
+        for (y_bottom, line) in lines.into_iter().enumerate() {
+            let y = start_line - y_bottom;
+            for (x, chr) in line.trim().chars().take(6).enumerate() {
+                use Tile::*;
+                let tile = match chr {
+                    ' ' | '_' => Air,
+                    'O' | 'o' | '0' => Nuisance,
+                    'R' | 'r' => Red,
+                    'G' | 'g' => Green,
+                    'B' | 'b' => Blue,
+                    'Y' | 'y' => Yellow,
+                    'P' | 'p' => Purple,
+                    c => {
+                        return Err(UnknownSymbol {
+                            at: (x, y),
+                            symbol: c,
+                        });
+                    }
+                };
+                this.set((x, y), tile);
+            }
+        }
+        Ok(this)
     }
 }
 
@@ -80,4 +139,25 @@ impl ColorBoard for TileBoard {
             x => Some(x),
         }
     }
+}
+
+#[test]
+fn integration_itself_works() -> Result<(), Box<dyn std::error::Error>> {
+    let board = "
+        ___
+        ypo
+        rgb
+    "
+    .parse::<TileBoard>()?;
+    use Tile::{
+        Air as A, Blue as B, Green as G, Nuisance as O, Purple as P, Red as R, Yellow as Y,
+    };
+    assert_eq!(
+        &board.items[0..2],
+        &[[R, G, B, A, A, A], [Y, P, O, A, A, A]]
+    );
+    assert_eq!(&board.items[2..12], &[[A; 6]; 10]);
+    assert_eq!(board.color(&(0, 0)), Some(R));
+    assert_eq!(board.color(&(3, 0)), None);
+    Ok(())
 }
