@@ -5,7 +5,7 @@ pub mod standard;
 
 extern crate alloc;
 
-use alloc::vec::Vec;
+use alloc::{borrow::ToOwned, vec::Vec};
 use hashbrown::HashSet;
 
 pub trait Board {
@@ -37,7 +37,7 @@ pub struct Groups<H: Copy + Clone + core::hash::Hash + Eq + Default> {
     pub groups: Vec<HashSet<H>>,
 }
 
-#[derive(Default, Clone)]
+#[derive(Default)]
 pub struct RefGroups<'a, H: Copy + Clone + core::hash::Hash + Eq + Default> {
     pub groups: Vec<alloc::borrow::Cow<'a, HashSet<H>>>,
 }
@@ -70,6 +70,14 @@ impl<'a, H: Copy + Clone + core::hash::Hash + Eq + Default> FromIterator<&'a Has
     fn from_iter<T: IntoIterator<Item = &'a HashSet<H>>>(iter: T) -> Self {
         RefGroups {
             groups: iter.into_iter().map(alloc::borrow::Cow::Borrowed).collect(),
+        }
+    }
+}
+
+impl<H: Copy + Clone + core::hash::Hash + Eq + Default> FromIterator<HashSet<H>> for Groups<H> {
+    fn from_iter<T: IntoIterator<Item = HashSet<H>>>(iter: T) -> Self {
+        Groups {
+            groups: FromIterator::from_iter(iter),
         }
     }
 }
@@ -109,6 +117,9 @@ impl<'a, H: Copy + Clone + core::hash::Hash + Eq + Default> RefGroups<'a, H> {
         self.into_iter()
             .filter(|g| g.len() >= pieces_to_pop)
             .collect()
+    }
+    pub fn to_owned(&self) -> Groups<H> {
+        self.into_iter().map(|x| x.into_owned()).collect()
     }
 }
 

@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use owanimo::{
-    Board,
+    Board, RefGroups,
     standard::{ColorBoard, NuisanceBoard},
 };
 
@@ -17,9 +17,33 @@ enum Tile {
     Purple,
 }
 
-#[derive(Default, Clone, Copy)]
+#[derive(Default, Clone, Copy, PartialEq, Eq)]
 struct TileBoard {
     items: [[Tile; 6]; 12],
+}
+
+impl std::fmt::Debug for TileBoard {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "┌──────┐")?;
+        for line in self.items.iter().rev() {
+            write!(f, "│")?;
+            for chr in line {
+                let to_write = match chr {
+                    Tile::Air => " ",
+                    Tile::Nuisance => "\033[0m●\033[0m",
+                    Tile::Green => "\033[92m●\033[0m",
+                    Tile::Red => "\033[91m●\033[0m",
+                    Tile::Blue => "\033[94m●\033[0m",
+                    Tile::Yellow => "\033[93m●\033[0m",
+                    Tile::Purple => "\033[35m●\033[0m",
+                };
+                write!(f, "{}", to_write);
+            }
+            writeln!(f, "│")?;
+        }
+        writeln!(f, "└──────┘")?;
+        Ok(())
+    }
 }
 
 impl TileBoard {
@@ -37,6 +61,13 @@ impl TileBoard {
             .get_mut(y)
             .and_then(|row| row.get_mut(x))
             .unwrap_or(&mut noop) = to;
+    }
+    fn pop(&mut self, refs: &RefGroups<(usize, usize)>) {
+        for g in refs.into_iter() {
+            for g in g.iter().copied() {
+                self.set(g, Tile::Air);
+            }
+        }
     }
 }
 
@@ -159,5 +190,17 @@ fn integration_itself_works() -> Result<(), Box<dyn std::error::Error>> {
     assert_eq!(&board.items[2..12], &[[A; 6]; 10]);
     assert_eq!(board.color(&(0, 0)), Some(R));
     assert_eq!(board.color(&(3, 0)), None);
+    Ok(())
+}
+
+#[test]
+fn do_a_pop() -> Result<(), Box<dyn std::error::Error>> {
+    let mut board = "rrrrb".parse::<TileBoard>()?;
+    let original_groups = board.owanimo_grouper();
+    let binding = original_groups.as_ref();
+    let binding = binding.owanimo_pop(4);
+    let popped_groups = binding.owanimo_nuisance(&board);
+    board.pop(&popped_groups);
+    assert_eq!("____b".parse::<TileBoard>()?, board);
     Ok(())
 }
