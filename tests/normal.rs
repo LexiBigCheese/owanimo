@@ -104,6 +104,8 @@ impl TileBoard {
                 }
                 //then rotate cursor_a..index leftwards to push the air bubbles to the top and repeat
                 col[cursor_a..index].rotate_left(cursor_b - cursor_a);
+                //and rotate the index too
+                index -= cursor_b - cursor_a;
                 if index == col.len() {
                     break;
                 }
