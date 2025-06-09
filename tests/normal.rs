@@ -30,12 +30,12 @@ impl std::fmt::Debug for TileBoard {
             for chr in line {
                 let to_write = match chr {
                     Tile::Air => " ",
-                    Tile::Nuisance => "\033[0m●\033[0m",
-                    Tile::Green => "\033[92m●\033[0m",
-                    Tile::Red => "\033[91m●\033[0m",
-                    Tile::Blue => "\033[94m●\033[0m",
-                    Tile::Yellow => "\033[93m●\033[0m",
-                    Tile::Purple => "\033[35m●\033[0m",
+                    Tile::Nuisance => "\x1B[0m●\x1B[0m",
+                    Tile::Green => "\x1B[92m●\x1B[0m",
+                    Tile::Red => "\x1B[91m●\x1B[0m",
+                    Tile::Blue => "\x1B[94m●\x1B[0m",
+                    Tile::Yellow => "\x1B[93m●\x1B[0m",
+                    Tile::Purple => "\x1B[35m●\x1B[0m",
                 };
                 write!(f, "{}", to_write)?;
             }
@@ -72,7 +72,7 @@ impl TileBoard {
     fn getcol(&self, x: usize) -> [Tile; 12] {
         let mut vals = [Tile::Air; 12];
         for y in 0..12 {
-            vals[y] = self.get((0, y));
+            vals[y] = self.get((x, y));
         }
         vals
     }
@@ -258,12 +258,14 @@ fn do_a_chain() -> Result<(), Box<dyn std::error::Error>> {
     .parse::<TileBoard>()?;
     loop {
         board.fall();
+        println!("{:?}", board);
         let grps = board.owanimo_grouper();
         let binding = grps.as_ref();
         let binding = binding.owanimo_pop(4);
         let pg = binding.owanimo_nuisance(&board);
         let pcs = owanimo::standard::TrivialPiecesCleared.score(&board, &pg);
         board.pop(&pg);
+        println!("{:?}", board);
         if pcs == 0 {
             break;
         }
