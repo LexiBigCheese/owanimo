@@ -8,10 +8,25 @@ extern crate alloc;
 use alloc::{borrow::ToOwned, vec::Vec};
 use hashbrown::HashSet;
 
+///A Board of Beings, Mages visualise an area as a board, usually a 2D Cartesian Grid,
+/// but more advanced mages may go for advanced boards like Hexagonal grids (which are triagonal grids)
+/// or even 3D Grids!
 pub trait Board {
     type Handle: Copy + Clone + core::hash::Hash + Eq + Default;
+    ///Iterates through all of the tiles in this board.
+    ///
+    /// Doesn't need to iterate through air tiles, but it shouldn't matter if it does.
     fn tiles(&self) -> impl Iterator<Item = Self::Handle>;
+    /// Iterates through all the neighbors to a tile.
+    ///
+    /// In a 2D cartesian grid, this would be the tiles marked `X` around the handle marked `O`:
+    /// ```
+    ///  X
+    /// XOX
+    ///  O
+    /// ```
     fn neighbors(&self, handle: &Self::Handle) -> impl Iterator<Item = Self::Handle>;
+    /// Do the tiles in the handles for `a` and `b` connect?
     fn connects(&self, a: &Self::Handle, b: &Self::Handle) -> bool;
     ///The first part of the Owanimo spell, finds groups of beings on a board
     ///To get the second part of the spell, do `groups.as_ref().owanimo_pop()`
@@ -43,12 +58,17 @@ pub struct RefGroups<'a, H: Copy + Clone + core::hash::Hash + Eq + Default> {
 }
 
 impl<H: Copy + Clone + core::hash::Hash + Eq + Default> Groups<H> {
+    ///Find a group containing the handle provided, and extract it from the `Groups`.
+    ///
+    /// This is used in the first part of the Owanimo spell.
     pub fn find(&mut self, handle: &H) -> Option<HashSet<H>> {
         self.groups.extract_if(.., |g| g.contains(handle)).next()
     }
+    ///Add a group into the `Groups`.
     pub fn push(&mut self, group: HashSet<H>) {
         self.groups.push(group);
     }
+    ///Gets a `RefGroups` from this `Groups`
     pub fn as_ref(&self) -> RefGroups<H> {
         self.groups.iter().collect()
     }
@@ -94,6 +114,7 @@ impl<'a, 'b: 'a, H: Copy + Clone + core::hash::Hash + Eq + Default> IntoIterator
 }
 
 impl<'a, H: Copy + Clone + core::hash::Hash + Eq + Default> RefGroups<'a, H> {
+    ///Find a group containing the handle provided, and extract it from the `RefGroups`.
     pub fn find(&self, handle: &H) -> Option<alloc::borrow::Cow<HashSet<H>>> {
         self.groups
             .iter()
@@ -101,6 +122,9 @@ impl<'a, H: Copy + Clone + core::hash::Hash + Eq + Default> RefGroups<'a, H> {
             .map(Clone::clone)
             .next()
     }
+    ///Find a group containing the handle provided, and return `true` if it exists
+    ///
+    /// This is used in the third part of the Owanimo spell.
     pub fn test(&self, handle: &H) -> bool {
         self.groups
             .iter()
@@ -118,11 +142,13 @@ impl<'a, H: Copy + Clone + core::hash::Hash + Eq + Default> RefGroups<'a, H> {
             .filter(|g| g.len() >= pieces_to_pop)
             .collect()
     }
+    ///Turns this `RefGroups` into a `Groups`
     pub fn to_owned(&self) -> Groups<H> {
         self.into_iter().map(|x| x.into_owned()).collect()
     }
 }
 
+///Calculates a Score from the state of the board and the pieces that have popped.
 pub trait Scorer<B: Board> {
     fn score(&self, board: &B, popped: &RefGroups<<B as Board>::Handle>) -> u64;
 }
