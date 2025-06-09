@@ -37,7 +37,7 @@ impl std::fmt::Debug for TileBoard {
                     Tile::Yellow => "\033[93m●\033[0m",
                     Tile::Purple => "\033[35m●\033[0m",
                 };
-                write!(f, "{}", to_write);
+                write!(f, "{}", to_write)?;
             }
             writeln!(f, "│")?;
         }
