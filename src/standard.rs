@@ -48,23 +48,15 @@ impl<'a, B: ColorBoard> Scorer<B> for ColorBonusTable<'a> {
     fn score(&self, board: &B, popped: &RefGroups<<B as Board>::Handle>) -> u64 {
         let mut colors: HashSet<B::Color> = Default::default();
         for g in &popped.groups {
-            let Some(handle) = g.iter().next() else {
-                continue;
+            if let Some(color) = g.iter().next().and_then(|handle| board.color(handle)) {
+                colors.get_or_insert(color);
             };
-            let Some(color) = board.color(handle) else {
-                continue;
-            };
-            colors.get_or_insert(color);
         }
-        if colors.is_empty() {
-            0
-        } else {
-            *self
-                .table
-                .get(colors.len())
-                .or(self.table.last())
-                .unwrap_or(&0)
-        }
+        *self
+            .table
+            .get(colors.len())
+            .or(self.table.last())
+            .unwrap_or(&0)
     }
 }
 
