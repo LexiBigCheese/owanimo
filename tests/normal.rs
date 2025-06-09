@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use owanimo::{
-    Board, RefGroups,
+    Board, RefGroups, Scorer,
     standard::{ColorBoard, NuisanceBoard},
 };
 
@@ -84,9 +84,30 @@ impl TileBoard {
     fn fall(&mut self) {
         for x in 0..6 {
             let mut col = self.getcol(x);
-            let mut n_air = 0;
-            let mut n_pcs = 0;
-            todo!("FALLING ALGORITHM");
+            let mut index = 0;
+            'outer: loop {
+                let cursor_a = index;
+                //cursor starts at bottom, assumes itself to be air,
+                while col[index] == Tile::Air {
+                    index += 1;
+                    if index == col.len() {
+                        break 'outer;
+                    };
+                }
+                let cursor_b = index;
+                //now find how many are not
+                while col[index] != Tile::Air {
+                    index += 1;
+                    if index == col.len() {
+                        break;
+                    }
+                }
+                //then rotate cursor_a..index leftwards to push the air bubbles to the top and repeat
+                col[cursor_a..index].rotate_left(cursor_b - cursor_a);
+                if index == col.len() {
+                    break;
+                }
+            }
             self.setcol(x, col);
         }
     }
@@ -223,5 +244,30 @@ fn do_a_pop() -> Result<(), Box<dyn std::error::Error>> {
     let popped_groups = binding.owanimo_nuisance(&board);
     board.pop(&popped_groups);
     assert_eq!("____b".parse::<TileBoard>()?, board);
+    Ok(())
+}
+
+#[test]
+fn do_a_chain() -> Result<(), Box<dyn std::error::Error>> {
+    let mut board = "
+    _rbg
+    rbgy
+    rbgy
+    rbgyy
+    "
+    .parse::<TileBoard>()?;
+    loop {
+        board.fall();
+        let grps = board.owanimo_grouper();
+        let binding = grps.as_ref();
+        let binding = binding.owanimo_pop(4);
+        let pg = binding.owanimo_nuisance(&board);
+        let pcs = owanimo::standard::TrivialPiecesCleared.score(&board, &pg);
+        board.pop(&pg);
+        if pcs == 0 {
+            break;
+        }
+    }
+    assert_eq!(board.items, [[Tile::Air; 6]; 12]);
     Ok(())
 }

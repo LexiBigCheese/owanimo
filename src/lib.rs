@@ -20,7 +20,7 @@ pub trait Board {
     /// Iterates through all the neighbors to a tile.
     ///
     /// In a 2D cartesian grid, this would be the tiles marked `X` around the handle marked `O`:
-    /// ```
+    /// ```text
     ///  X
     /// XOX
     ///  O
