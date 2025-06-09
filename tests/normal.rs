@@ -69,6 +69,27 @@ impl TileBoard {
             }
         }
     }
+    fn getcol(&self, x: usize) -> [Tile; 12] {
+        let mut vals = [Tile::Air; 12];
+        for y in 0..12 {
+            vals[y] = self.get((0, y));
+        }
+        vals
+    }
+    fn setcol(&mut self, x: usize, vs: [Tile; 12]) {
+        for (y, v) in vs.into_iter().enumerate() {
+            self.set((x, y), v);
+        }
+    }
+    fn fall(&mut self) {
+        for x in 0..6 {
+            let mut col = self.getcol(x);
+            let mut n_air = 0;
+            let mut n_pcs = 0;
+            todo!("FALLING ALGORITHM");
+            self.setcol(x, col);
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
