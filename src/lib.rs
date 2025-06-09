@@ -5,7 +5,7 @@ pub mod standard;
 
 extern crate alloc;
 
-use alloc::{borrow::ToOwned, vec::Vec};
+use alloc::vec::Vec;
 use hashbrown::HashSet;
 
 ///A Board of Beings, Mages visualise an area as a board, usually a 2D Cartesian Grid,
