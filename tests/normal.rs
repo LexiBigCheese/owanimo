@@ -250,9 +250,9 @@ fn do_a_pop() -> Result<(), Box<dyn std::error::Error>> {
 #[test]
 fn do_a_chain() -> Result<(), Box<dyn std::error::Error>> {
     let mut board = "
-    _rbg
+    orbg
     rbgy
-    rbgy
+    rbgyo
     rbgyy
     "
     .parse::<TileBoard>()?;
