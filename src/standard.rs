@@ -1,7 +1,7 @@
 use alloc::borrow::Cow;
 use hashbrown::HashSet;
 
-use crate::{Board, RefGroups, Scorer};
+use crate::{Board, BoardHandle, RefGroups, Scorer};
 
 /// Display the score as AxB, multiply the numbers together to get the actual score.
 ///
@@ -35,7 +35,7 @@ impl<B: Board> Scorer<B> for TrivialPiecesCleared {
 }
 
 pub trait ColorBoard: Board {
-    type Color: Copy + Clone + core::hash::Hash + Eq + Default;
+    type Color: BoardHandle;
     fn color(&self, handle: &Self::Handle) -> Option<Self::Color>;
 }
 
@@ -95,7 +95,7 @@ pub trait NuisanceBoard: Board {
     fn nuisance(&self, handle: &Self::Handle) -> bool;
 }
 
-impl<'a, H: Copy + Clone + core::hash::Hash + Eq + Default> RefGroups<'a, H> {
+impl<'a, H: BoardHandle> RefGroups<'a, H> {
     ///The Third part of the Owanimo spell, a Side Effect if you will, but an Important one.
     ///
     ///Use this function once you've opened portals to the otherworld with `owanimo_pop`
