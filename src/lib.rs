@@ -6,6 +6,9 @@ pub mod standard;
 #[cfg(feature = "gravity")]
 pub mod gravity;
 
+#[cfg(feature = "quicksim")]
+pub mod quicksim;
+
 extern crate alloc;
 
 use alloc::vec;
@@ -177,4 +180,9 @@ impl<B: Board> Scorer<B> for u64 {
     fn score(&self, _board: &B, _popped: &RefGroups<<B as Board>::Handle>) -> u64 {
         *self
     }
+}
+
+pub trait BanishBoard: Board {
+    ///Banish or Pop the being at `handle`
+    fn banish(&mut self, handle: Self::Handle);
 }

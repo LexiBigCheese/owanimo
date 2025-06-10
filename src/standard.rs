@@ -15,14 +15,49 @@ pub fn score<B: Board>(
     popped: &RefGroups<B::Handle>,
     pieces_cleared: &impl Scorer<B>,
     point_bonus: &impl Scorer<B>,
-    chain_power: u64,
+    chain_power: &impl Scorer<B>,
     color_bonus: &impl Scorer<B>,
     group_bonus: &impl Scorer<B>,
 ) -> (u64, u64) {
     let score = 10 * pieces_cleared.score(board, popped) + point_bonus.score(board, popped);
-    let multiplier =
-        chain_power + color_bonus.score(board, popped) + group_bonus.score(board, popped);
+    let multiplier = chain_power.score(board, popped)
+        + color_bonus.score(board, popped)
+        + group_bonus.score(board, popped);
     (score, multiplier)
+}
+
+pub struct StandardScorer<
+    'a,
+    B: Board,
+    PC: Scorer<B>,
+    PB: Scorer<B>,
+    CP: Scorer<B>,
+    CB: Scorer<B>,
+    GB: Scorer<B>,
+> {
+    pub pieces_cleared: &'a PC,
+    pub point_bonus: &'a PB,
+    pub chain_power: &'a CP,
+    pub color_bonus: &'a CB,
+    pub group_bonus: &'a GB,
+    pub phantom: core::marker::PhantomData<B>,
+}
+
+impl<'a, B: Board, PC: Scorer<B>, PB: Scorer<B>, CP: Scorer<B>, CB: Scorer<B>, GB: Scorer<B>>
+    Scorer<B> for StandardScorer<'a, B, PC, PB, CP, CB, GB>
+{
+    fn score(&self, board: &B, popped: &RefGroups<<B as Board>::Handle>) -> u64 {
+        let (a, b) = score(
+            board,
+            popped,
+            self.pieces_cleared,
+            self.point_bonus,
+            self.chain_power,
+            self.group_bonus,
+            self.color_bonus,
+        );
+        a * b
+    }
 }
 
 ///Note that if you use Sun or Point pieces, you should implement your own Scorer here
