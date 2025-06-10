@@ -5,14 +5,19 @@ pub mod standard;
 
 extern crate alloc;
 
+use alloc::vec;
 use alloc::vec::Vec;
 use hashbrown::HashSet;
+
+pub trait BoardHandle: Copy + Clone + core::hash::Hash + Eq {}
+
+impl<T: Copy + Clone + core::hash::Hash + Eq> BoardHandle for T {}
 
 ///A Board of Beings, Mages visualise an area as a board, usually a 2D Cartesian Grid,
 /// but more advanced mages may go for advanced boards like Hexagonal grids (which are triagonal grids)
 /// or even 3D Grids!
 pub trait Board {
-    type Handle: Copy + Clone + core::hash::Hash + Eq + Default;
+    type Handle: BoardHandle;
     ///Iterates through all of the tiles in this board.
     ///
     /// Doesn't need to iterate through air tiles, but it shouldn't matter if it does.
@@ -47,17 +52,29 @@ pub trait Board {
     }
 }
 
-#[derive(Default, Clone)]
-pub struct Groups<H: Copy + Clone + core::hash::Hash + Eq + Default> {
+#[derive(Clone)]
+pub struct Groups<H: BoardHandle> {
     pub groups: Vec<HashSet<H>>,
 }
 
-#[derive(Default)]
-pub struct RefGroups<'a, H: Copy + Clone + core::hash::Hash + Eq + Default> {
+impl<H: BoardHandle> Default for Groups<H> {
+    fn default() -> Groups<H> {
+        Groups { groups: vec![] }
+    }
+}
+
+#[derive(Clone)]
+pub struct RefGroups<'a, H: BoardHandle> {
     pub groups: Vec<alloc::borrow::Cow<'a, HashSet<H>>>,
 }
 
-impl<H: Copy + Clone + core::hash::Hash + Eq + Default> Groups<H> {
+impl<'a, H: BoardHandle> Default for RefGroups<'a, H> {
+    fn default() -> Self {
+        RefGroups { groups: vec![] }
+    }
+}
+
+impl<H: BoardHandle> Groups<H> {
     ///Find a group containing the handle provided, and extract it from the `Groups`.
     ///
     /// This is used in the first part of the Owanimo spell.
@@ -74,9 +91,7 @@ impl<H: Copy + Clone + core::hash::Hash + Eq + Default> Groups<H> {
     }
 }
 
-impl<'a, H: Copy + Clone + core::hash::Hash + Eq + Default>
-    FromIterator<alloc::borrow::Cow<'a, HashSet<H>>> for RefGroups<'a, H>
-{
+impl<'a, H: BoardHandle> FromIterator<alloc::borrow::Cow<'a, HashSet<H>>> for RefGroups<'a, H> {
     fn from_iter<T: IntoIterator<Item = alloc::borrow::Cow<'a, HashSet<H>>>>(iter: T) -> Self {
         RefGroups {
             groups: iter.into_iter().collect(),
@@ -84,9 +99,7 @@ impl<'a, H: Copy + Clone + core::hash::Hash + Eq + Default>
     }
 }
 
-impl<'a, H: Copy + Clone + core::hash::Hash + Eq + Default> FromIterator<&'a HashSet<H>>
-    for RefGroups<'a, H>
-{
+impl<'a, H: BoardHandle> FromIterator<&'a HashSet<H>> for RefGroups<'a, H> {
     fn from_iter<T: IntoIterator<Item = &'a HashSet<H>>>(iter: T) -> Self {
         RefGroups {
             groups: iter.into_iter().map(alloc::borrow::Cow::Borrowed).collect(),
@@ -94,7 +107,7 @@ impl<'a, H: Copy + Clone + core::hash::Hash + Eq + Default> FromIterator<&'a Has
     }
 }
 
-impl<H: Copy + Clone + core::hash::Hash + Eq + Default> FromIterator<HashSet<H>> for Groups<H> {
+impl<H: BoardHandle> FromIterator<HashSet<H>> for Groups<H> {
     fn from_iter<T: IntoIterator<Item = HashSet<H>>>(iter: T) -> Self {
         Groups {
             groups: FromIterator::from_iter(iter),
@@ -102,9 +115,7 @@ impl<H: Copy + Clone + core::hash::Hash + Eq + Default> FromIterator<HashSet<H>>
     }
 }
 
-impl<'a, 'b: 'a, H: Copy + Clone + core::hash::Hash + Eq + Default> IntoIterator
-    for &'b RefGroups<'a, H>
-{
+impl<'a, 'b: 'a, H: BoardHandle> IntoIterator for &'b RefGroups<'a, H> {
     type Item = alloc::borrow::Cow<'a, HashSet<H>>;
     type IntoIter =
         core::iter::Cloned<<&'b [alloc::borrow::Cow<'a, HashSet<H>>] as IntoIterator>::IntoIter>;
@@ -113,7 +124,7 @@ impl<'a, 'b: 'a, H: Copy + Clone + core::hash::Hash + Eq + Default> IntoIterator
     }
 }
 
-impl<'a, H: Copy + Clone + core::hash::Hash + Eq + Default> RefGroups<'a, H> {
+impl<'a, H: BoardHandle> RefGroups<'a, H> {
     ///Find a group containing the handle provided, and extract it from the `RefGroups`.
     pub fn find(&self, handle: &H) -> Option<alloc::borrow::Cow<HashSet<H>>> {
         self.groups
