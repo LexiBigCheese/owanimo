@@ -221,7 +221,7 @@ impl AutoGravityBoard for TileBoard {
     fn is_air(&self, handle: Self::Handle) -> bool {
         self.get(handle) == Tile::Air
     }
-    fn mutate_columns(&mut self, mutater: impl Fn(&Self, &mut [Self::Handle])) {
+    fn mutate_columns(&mut self, mut mutater: impl FnMut(&Self, &mut [Self::Handle])) {
         for x in 0..6 {
             let mut col = [(x, 0); 12];
             for y in 0..12 {
