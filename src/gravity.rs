@@ -1,17 +1,18 @@
 use crate::Board;
 
 pub trait GravityBoard: Board {
-    fn fall(&mut self);
+    fn fall(&mut self) -> bool;
 }
 
 pub trait AutoGravityBoard: Board {
     fn is_air(&self, handle: Self::Handle) -> bool;
-    fn mutate_columns(&mut self, mutater: impl Fn(&Self, &mut [Self::Handle]));
+    fn mutate_columns(&mut self, mutater: impl FnMut(&Self, &mut [Self::Handle]));
 }
 
 impl<T: AutoGravityBoard> GravityBoard for T {
-    fn fall(&mut self) {
-        self.mutate_columns(move |this, col| {
+    fn fall(&mut self) -> bool {
+        let mut did_fall = false;
+        self.mutate_columns(|this, col| {
             let mut index = 0;
             'outer: loop {
                 let cursor_a = index;
@@ -30,6 +31,9 @@ impl<T: AutoGravityBoard> GravityBoard for T {
                         break;
                     }
                 }
+                if cursor_b != cursor_a {
+                    did_fall = true;
+                }
                 //then rotate cursor_a..index leftwards to push the air bubbles to the top and repeat
                 col[cursor_a..index].rotate_left(cursor_b - cursor_a);
                 //and rotate the index too
@@ -39,5 +43,6 @@ impl<T: AutoGravityBoard> GravityBoard for T {
                 }
             }
         });
+        did_fall
     }
 }
