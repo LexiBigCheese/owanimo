@@ -3,6 +3,9 @@
 #[cfg(feature = "standard")]
 pub mod standard;
 
+#[cfg(feature = "gravity")]
+pub mod gravity;
+
 extern crate alloc;
 
 use alloc::vec;
