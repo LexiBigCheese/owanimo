@@ -2,6 +2,7 @@ use std::str::FromStr;
 
 use owanimo::{
     Board, RefGroups, Scorer,
+    gravity::{AutoGravityBoard, GravityBoard},
     standard::{ColorBoard, NuisanceBoard},
 };
 
@@ -216,6 +217,27 @@ impl ColorBoard for TileBoard {
     }
 }
 
+impl AutoGravityBoard for TileBoard {
+    fn is_air(&self, handle: Self::Handle) -> bool {
+        self.get(handle) == Tile::Air
+    }
+    fn mutate_columns(&mut self, mutater: impl Fn(&Self, &mut [Self::Handle])) {
+        for x in 0..6 {
+            let mut col = [(x, 0); 12];
+            for y in 0..12 {
+                col[y].1 = y;
+            }
+            mutater(&self, &mut col);
+            let tiles_original = self.getcol(x);
+            let mut tiles_new = [Tile::Air; 12];
+            for ((_, y), set_me) in col.into_iter().zip(&mut tiles_new) {
+                *set_me = tiles_original[y];
+            }
+            self.setcol(x, tiles_new);
+        }
+    }
+}
+
 #[test]
 fn integration_itself_works() -> Result<(), Box<dyn std::error::Error>> {
     let board = "
@@ -260,6 +282,33 @@ fn do_a_chain() -> Result<(), Box<dyn std::error::Error>> {
     .parse::<TileBoard>()?;
     loop {
         board.fall();
+        println!("{:?}", board);
+        let grps = board.owanimo_grouper();
+        let binding = grps.as_ref();
+        let binding = binding.owanimo_pop(4);
+        let pg = binding.owanimo_nuisance(&board);
+        let pcs = owanimo::standard::TrivialPiecesCleared.score(&board, &pg);
+        board.pop(&pg);
+        println!("{:?}", board);
+        if pcs == 0 {
+            break;
+        }
+    }
+    assert_eq!(board.items, [[Tile::Air; 6]; 12]);
+    Ok(())
+}
+
+#[test]
+fn do_a_chain_autogravity() -> Result<(), Box<dyn std::error::Error>> {
+    let mut board = "
+    orbg
+    rbgy
+    rbgyo
+    rbgyy
+    "
+    .parse::<TileBoard>()?;
+    loop {
+        <TileBoard as GravityBoard>::fall(&mut board);
         println!("{:?}", board);
         let grps = board.owanimo_grouper();
         let binding = grps.as_ref();
