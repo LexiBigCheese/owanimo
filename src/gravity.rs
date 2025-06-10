@@ -1,9 +1,16 @@
 use crate::Board;
 
 pub trait GravityBoard: Board {
+    fn fall(&mut self);
+}
+
+pub trait AutoGravityBoard: Board {
     fn is_air(&self, handle: Self::Handle) -> bool;
     fn mutate_columns(&mut self, mutater: impl Fn(&Self, &mut [Self::Handle]));
-    fn do_gravity(&mut self) {
+}
+
+impl<T: AutoGravityBoard> GravityBoard for T {
+    fn fall(&mut self) {
         self.mutate_columns(move |this, col| {
             let mut index = 0;
             'outer: loop {
