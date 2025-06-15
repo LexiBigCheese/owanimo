@@ -1,6 +1,6 @@
 use crate::Board;
 
-pub trait GravityBoard: Board {
+pub trait GravityBoard {
     fn fall(&mut self) -> bool;
 }
 
